@@ -1,0 +1,482 @@
+---
+title: "PHI512 Lab 1"
+format: 
+  html:
+    toc: true
+editor: visual
+---
+
+# Introduction
+
+## Why R?
+
+R is a programming language for statistical computing and graphics. It can usually be used for the entire process of a statistical analysis: reading in data, cleaning data, analyzing data, and visualization.
+
+-   R is free
+-   Can do virtually anything
+-   Lots of community support (packages, help online, etc.)
+-   Easy to replicate results
+
+## General Workflow
+
+In RStudio, the two main panes you will be using are the "Source" pane and a "Console" pane. The Source pane is a text editor where you will have your R scripts, Quarto files, etc., while the Console pane is where the R commands from your R scripts are run.
+
+The general workflow is that you will write all of your R code in an R script or Quarto file, and from these you will run commands in the console. However, sometimes it's faster to type R commands directly in the console when e.g. debugging or doing quick data exploration/visualization, and that's fine.
+
+## Quarto
+
+Quarto is an awesome new(!) tool that allows you to create documents that integrate R code, text, and output into one cohesive document! It allows for greater reproducibility and improved readability, and (once you're familiar with it) it can save you tons of time in formatting and producing documents.
+
+[Here is an introduction to using Quarto](https://quarto.org/docs/get-started/hello/rstudio.html), and [here is a quick guide on common usage](https://quarto.org/docs/get-started/authoring/rstudio.html).
+
+You are not required to use Quarto to create your lab or homework solutions. I'll be using it in lab to create the notes, which you'll be able to open up in RStudio and follow along.
+
+## Copilot
+
+Copilot is an AI tool that can help you write code by providing suggestions for code completions. It is available in RStudio. You should have requested access to a GitHub education account today. We'll enable it next week during lab. More information on GitHub Copilot and RStudio integration can be found [here](https://docs.posit.co/ide/user/ide/guide/tools/copilot.html).
+
+This week, we'll focus on getting familiar with using R and next week we'll start using Copilot in our process.
+
+# R Fundamentals
+
+## R Does Math!
+
+We can use R as a calculator for performing math!
+
+```{r math}
+2 + 2
+3^4 * (3 - 3) + 1/2
+```
+
+## Objects in R
+
+In R, you can store output in objects using the `<-` command. The left hand side will be the name of the object you are creating, and the right hand side will be what you're storing into the object.
+
+Let's create an object named `x` and store the number `4` in it, and create an object named `y` and store in it the result of a more complicated math expression.
+
+```{r objects}
+x <- 4
+y <- 3^4 * (3 - 3) + 1/2
+```
+
+The objects `x` and `y` are now stored in your global environment. You can look in the "Environment" tab in the "Environment/History/Connections/Tutorial" RStudio pane to see what objects are in your current environment. Alternatively, you can list them by running the `ls()` command
+
+Remember that objects in R are CASE-SENSITIVE. So, `x` and `X` refer to different objects! This can sometimes lead to errors if you accidentally capitalize (or forget to capitalize) the name of an object.
+
+```{r list_env}
+ls()
+```
+
+You can also type `x` and `y` in the console and hit enter or return in order to see what's stored in these objects.
+
+```{r display_xy}
+x
+y
+```
+
+We can perform operations on objects as well.
+
+```{r object_operation}
+x + y
+```
+
+## Data Types
+
+You can create many different types of objects in R. The `x` and `y` objects above are "numeric" objects:
+
+```{r class_x}
+class(x)
+```
+
+Some additional object types are "character":
+
+```{r character}
+character_object_A <- "A"
+character_object_A
+character_object_cat <- "cat"
+character_object_cat
+class(character_object_cat)
+```
+
+and "logical":
+
+```{r logical}
+logical_object_T <- TRUE
+logical_object_T
+logical_object_F <- FALSE
+logical_object_F
+class(logical_object_F)
+```
+
+We can also create vectors in R, which can be numeric, character, or logical.
+
+```{r vector}
+num_vector <- c(1, 2, 3)
+num_vector
+class(num_vector)
+char_vector <- c("A", "B", "C")
+char_vector
+class(char_vector)
+logi_vector <- c(TRUE, FALSE, TRUE, FALSE)
+logi_vector
+class(logi_vector)
+```
+
+## Logical Comparisons
+
+A logical comparison is a statement that compares two values and returns either TRUE or FALSE. If we want to make logical comparisons, we can use the following:
+
+-   `>`: strictly greater than
+-   `<`: strictly less than
+-   `==`: equal to (note that this is TWO equals signs)
+-   `!=`: NOT equal to
+-   `>=`: greater than or equal to
+-   `<=`: less than or equal to
+-   `%in%`: is an element of
+
+Here are some examples of usage.
+
+```{r logical_comparisons}
+2 > 3
+2 < 3
+2 == 3
+3 == 3
+2 != 3
+2 <= 3
+3 >= 3
+```
+
+We can also perform logical comparisons on vectors, in which case the comparison will be done for each element of the vector.
+
+```{r logical_comparisons_vector}
+x <- c(1, 4, 5)
+y <- c("cat", "dog", "goat")
+
+x < 4
+y == "goat"
+```
+
+The `%in%` comparison is a bit different than the others. For example, the statement `3 %in% x` will check to see if any element of `x` is equal to `3`.
+
+```{r logical_comparisons_in}
+x <- c(1, 2, 3)
+3 %in% x
+```
+
+## Functions in R
+
+In R, you will use functions to do most of your work. A function takes input in the form of "arguments" and produces a function-dependent output which you can then store in an R object. Above, `c()` is an example of a function.
+
+Each function in R has specific input arguments. Some you must specify yourself, some have default values (values that the argument will take if nothing else is specified) and thus are optional and you only have to specify them if you want something different from the default.
+
+Another example of a function is the `mean()` function which takes a vector as an input argument and returns the mean of that vector as the output.
+
+```{r mean}
+num_vec <- c(1, 4.4, 5, 7)
+mean_num_vec <- mean(num_vec)
+mean_num_vec
+```
+
+Arguments have names, but functions also have a default ordering of input arguments so if you do not specify a name of an argument then it will go in order. For the `mean()` function, the main argument (the vector of which you want to take the mean) is named `x`. It is also the first argument so if you don't specify it by name, then R will assume the first argument is `x`.
+
+```{r mean_2}
+mean_num_vec <- mean(x = num_vec)
+mean_num_vec
+```
+
+Another note that functions in R are also CASE-SENSITIVE. So `mean()` and `Mean()` are different functions! Type `?mean` to open the documentation for the function under the "Help" tab in the "Files/Plots/Packages/Help/Viewer" RStudio pane.
+
+We will be introducing lots of functions and their usage during this class.
+
+## Writing Comments in Your Code
+
+Anything written in your R code that is preceded by a `#` will not be run by R.
+
+```{r comment_example}
+# this won't be run!!!
+```
+
+You can use this functionality to write comments in your code to improve readability (for others, yourself, and especially your future self). It is very important that you and others who might read your code know what's going on.
+
+Here are some recommendations for commenting your code:
+
+-   Use comments to mark off sections of code.
+-   Comment your code with care. Comments should explain the why, not the what.
+-   Start each R script with a comment saying who wrote it and when, and what it contains. If your script works in conjunction with multiple other scripts in a larger program, you should also include how this particular file fits into the larger program.
+
+**We will rely heavily on creating comments in the class. Writing clear, simple comments will help Copilot provide accurate suggestions for what code to use.**
+
+## R in this class
+
+As we move through the quarter, you'll learn more about R, and we will typically do this through using Copilot.
+
+You'll be responsible for telling Copilot what you want, and then Copilot will create the code for you. This way, you won't need to memorize lots of syntax and commands, but over time you will become more familiar with R through seeing patterns and working with the code that Copilot suggests! You will, however, need to (1) understand what it is you want, (2) break it down into simple steps, (3) write specific comments for Copilot to use to suggest code, (4) double-check the output for accuracy (and think of how to do this), and (5) troubleshoot any issues. This should save you time and allow you to focus on the more important parts of data analysis!
+
+For the rest of today, we'll focus on:
+
+1.  Loading a library
+2.  Reading in data
+3.  Basic data manipulation
+
+# R Packages
+
+## What Are R packages?
+
+R packages are collections of functions and data sets developed by the community. They increase the power of R by improving existing base R functionalities, or by adding new ones. R comes with a set of packages, but you can download new ones as well. Usually, you will download packages from [CRAN](https://cran.r-project.org/), an online repository with over 10,000 R packages, but you can also download them from other locations such as GitHub.
+
+## Installing Packages From CRAN
+
+For publicly available packages on CRAN, you just need the name of the package and use the command `install.packages()`. One package we will be using is the `tidyverse` package, which is actually a package that represents a set of packages. Installing the `tidyverse` package will install a collection of many packages such as `dplyr` and `ggplot2`.
+
+If you have not already, let's install the `tidyverse`.
+
+```{r install_tidyverse}
+#| message: FALSE
+#| warning: FALSE
+# This code is commented out because I've already installed the package
+# install.packages("tidyverse")
+```
+
+You only ever need to install a package once (until you upgrade to a new version of R).
+
+## Loading Libraries
+
+Once you install a package, you'll need to load it in. Copilot should suggest this for you, but I recommend doing this yourself at the top of your R script or Quarto document like so:
+
+```{r library_tidyverse}
+#| message: FALSE
+#| warning: FALSE
+library(tidyverse)
+```
+
+# Working with Data
+
+The main way we will be using R in this class is for data analysis. Thus, we must know how to read data into R and perform basic operations with the data. As an example, we will be using some data from the US National Health and Nutrition Examination Surveys (NHANES). NHANES uses a **complex survey design** to **oversample** certain subgroups. The version we will use can be viewed as a **simple random sample** from the US population. We will use this data to show how to use R to read in data saved on your computer, perform common data manipulation/wrangling tasks, and run a basic descriptive analysis.
+
+## Reading in Data
+
+The function we use to read in data will depend on what format the data is in. This lab will use a .csv file as the example, and the relevant function to read in a .csv file is the `read.csv()` function. Data in this class will either be provided through (1) the `course_materials/data` folder on JupyterHub, (2) through Canvas, which you can download and then upload into JupyterHub, or (3) through a Dropbox link.
+
+You can also use relative file paths, which we will discuss in later labs.
+
+Let's load in the data. We will store the output of the `read.csv()` function in an object. You can name the object whatever you wish, but make it informative.
+
+Note: Copilot will usually suggest the `read_csv()` function, which you could use instead, but that has different arguments.
+
+```{r read_data}
+nhanes <- read.csv("REPLACE_WITH_LINK_TO_DATA", 
+                   stringsAsFactors = TRUE)
+```
+
+## Data Frames
+
+The `read.csv()` function reads in the data and stores it as a `data.frame` object. A `data.frame` object is structured like a matrix with rows and columns, where the rows correspond to observations and the columns correspond to variables.
+
+A good first step of any data analysis, is to verify the data you have matches what you expect. Below is a set of commands that are usually good to run in the beginning to get accustomed to a dataset.
+
+We can read the names of the variables with the `names()` function.
+
+```{r names}
+names(nhanes)
+```
+
+We can use `dim()` to see the dimensions of the data---the numbers of rows and columns.
+
+```{r dimensions}
+dim(nhanes)
+```
+
+To see the first 6 rows, we can use the `head()` function
+
+```{r head}
+head(nhanes)
+```
+
+We see that each row corresponds to an individual in our dataset, with the columns being the different measurements taken on each person. There are 500 rows. A benefit of using the `head()` function is that we can see what types of values are in each column. For example, the `age` column appears to take on numerical values and `education` appears to take on values `High school/some college` and `College graduate` from what we can see so far.
+
+We can see the structure of the data frame with the `str()` function.
+
+```{r str}
+str(nhanes)
+```
+
+We can see summaries of each variable with the `summary()` function.
+
+```{r summary}
+summary(nhanes)
+```
+
+## Piping in R
+
+The main way we will be interacting with data sets will be by applying functions to them---subsetting, summarizing, etc. To apply a sequence of functions to a data frame, we will mainly be 'piping' functions together with the `%>%` operator from the `dplyr` package which is loaded when you load the `tidyverse` package. This is a way to take the output from a function and use it as the input of the next function in order to chain functions together in a readable and user-friendly manner.
+
+To start, here's a way to summarize the data frame by piping.
+
+```{r piping_summary}
+nhanes %>% summary()
+```
+
+The above code uses the `nhanes` object as the input to the summary function. You can think of it as "start with the `nhanes` object, then apply the `summary()` function to it."
+
+For the next example, we will "pipe" the `nhanes` data into the `pull()` function, to extract the `age` column:
+
+```{r piping_age}
+age_piped <- nhanes %>% pull(age)
+```
+
+In the command `nhanes %>% pull(age)`, you can think of this as "start with the `nhanes` data, then apply the `pull()` function to it with the additional argument `age` (which is the variable to pull from the data)."
+
+![](images/pull.png)
+
+Let's take a look at what we have:
+
+```{r all_equal}
+age_piped
+```
+
+As a final example, let's take the summary of the `age` variable by piping!
+
+```{r piping_summary_age}
+nhanes %>% pull(age) %>% summary()
+```
+
+You can see how the applied functions are chained together. We can read this as "start with the `nhanes` data, pull the `age` variable out, then summarize it." More technically, we can read it as "start with the `nhanes` data, apply the `pull()` function with the additional argument `age`, then take this output from the `pull()` function and apply the `summary()` function to it."
+
+Note: the code provided in this class will usually follow tidyverse-- this is the way that data manipulation in R is often taught nowadays and is what Copilot will tend to suggest if you first load the tidyverse package (using `library(tidyverse)`). It can sometimes be helpful to see other ways to perform data manipulation especially when using the Internet (which I will always advocate for!) for help debugging. You are more than welcome to use whatever code makes the most sense for you (as long as it works)!
+
+## More summaries
+
+We can also use the `summarize()` function to calculate summary statistics:
+
+```{r summarize_age}
+nhanes %>% summarize(mean_age = mean(age), sd_age = sd(age))
+```
+
+Notice that this created a new data frame with two columns: `mean_age` and `sd_age`. We could choose to save this as a new variable to refer back to later!
+
+Q: how would you do this?
+
+## Calculating Proportions
+
+For categorical variables, we often want to create a table of the numbers in each category. We can use the `table()` function for this. Let's tabulate the numbers of persons who have hypertension in the nhanes data.
+
+```{r table_piped}
+nhanes %>% pull(hypertension) %>% table()
+```
+
+How would you read the above code? E.g. "start with the `nhanes` data, ..."
+
+If we want to calculate the percentages of each hypertension status, then we can use the `prop.table()` function. The input to `prop.table()` is a table (i.e. the output from the `table()` function), so we can add this to the end of our chain of piped functions, or add it as the outermost function if we aren't piping.
+
+```{r proportions}
+nhanes %>% pull(hypertension) %>% table() %>% prop.table()
+```
+
+## Pull and Select
+
+We have already seen `pull()` in action, which requires ONE column name and outputs a vector. On the other hand with `select()` you can specify multiple columns and it will output a data frame with only those columns.
+
+![](images/select.png)
+
+We will compare these when we use just focus on one column and use `head()` to only show the first few entries/rows:
+
+```{r pull_v_select}
+nhanes %>% pull(age) %>% head()
+nhanes %>% select(age) %>% head()
+```
+
+As mentioned, we can also use `select()` with multiple columns:
+
+```{r select}
+nhanes %>% select(age, bp_sys_mmhg, hypertension) %>% head()
+```
+
+## Subsetting Data
+
+We can use the `filter()` function to subset data. This function takes as input a data frame and a logical comparison for one (or more) of the variables in the data frame. This function will make a logical comparison to check if a statement regarding the values of a variable in your data set is TRUE, and then only returning the subset of the data for which this statement is TRUE.
+
+![](images/filter.png)
+
+Let's say we want to create a new data frame with only those with hypertension in our data.
+
+```{r filter}
+nhanes_hyp <- nhanes %>% filter(hypertension == "Yes")
+head(nhanes_hyp)
+nhanes_hyp %>% pull(hypertension) %>% table()
+```
+
+For the logical comparison in the `filter()` function, you must be very careful to make sure that the value you're comparing to is correct. Capitalization matters! The command `filter(hypertension == "yes")` will not give any results.
+
+We can combine subsetting with other operations as well. Let's summarize the age of only those who have hypertension.
+
+```{r filter_summary}
+nhanes %>% filter(hypertension == "Yes") %>% pull(age) %>% summary()
+```
+
+Lastly, let's make a table of the proportion of health insurance types (`health_insurance`) among those who do not have hypertension.
+
+```{r filter_prop_hyp_hi}
+nhanes %>% filter(hypertension == "No") %>% pull(health_insurance) %>% table() %>% prop.table()
+```
+
+### Logical Operators
+
+Sometimes it will be useful to have more sophisticated conditions to check and so we can use logical operators. There are three of them:
+
+-   the AND operator (&)
+-   the OR operator (\|)
+-   the NOT operator (!)
+
+**Example 1**: suppose we want to subset the data to include those who are college graduates (`education == "College graduate"`) AND have private health insurance (`health_insurance == "Private"`):
+
+```{r logical_operator_AND}
+nhanes %>% filter(education == "College graduate" & health_insurance == "Private") %>% head()
+```
+
+**Example 2**: suppose we want to summarize the ages of everyone with SBP under 120 OR DBP under 80:
+
+```{r logical_operator_OR}
+nhanes %>% filter(bp_sys_mmhg < 120 | bp_dia_mmhg < 80) %>% pull(age) %>% summary()
+```
+
+**Example 3**: suppose we want the systolic blood pressure of everyone without hypertension, are NOT in the more than 75,000 household income category, AND are at least 40 years old:
+
+```{r logical_operator_NOT}
+nhanes %>% filter(hypertension == "No" & income_hh != "$75,000 and above" & age >= 40) %>% pull(bp_sys_mmhg) %>% head()
+```
+
+# Practice on Your Own!
+
+The first 3 questions use the `nhanes` data. Please turn in a completed html, pdf, or word document that has solutions for the final 4 questions from the lab.
+
+## Question 1
+
+Calculate the summary statistics (using the `summary()` function) of systolic blood pressure (the `bp_sys_mmhg` variable) for all subjects in the dataset.
+
+```{r q1}
+# solution goes here
+```
+
+## Question 2
+
+Calculate the summary statistics of systolic blood pressure for those who are over age 45 (`age > 45`) AND do not have private health insurance.
+
+```{r q2}
+# solution goes here
+```
+
+## Question 3
+
+Create a table showing the ***proportion*** of those who did and did not have a health care visit in the past year (`hc_visit_1yr`) among those individuals who have private health insurance --- note: the proportions should add up to 1.
+
+```{r q3}
+# solution goes here
+```
+
+## Question 4
+
+Use R to calculate the mean of the numbers: 0, 5, 12, 3, 16, 19, 56
+
+```{r q4}
+# solution goes here
+```

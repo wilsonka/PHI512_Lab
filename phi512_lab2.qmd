@@ -1,0 +1,359 @@
+---
+title: "PHI512 Lab 2"
+format: 
+  html:
+    toc: true
+editor: visual
+---
+
+# Review from Last Time
+
+## Quarto
+
+Quarto is an awesome new(!) tool that allows you to create documents that integrate R code, text, and output into one cohesive document! It allows for greater reproducibility and improved readability, and (once you're familiar with it) it can save you tons of time in formatting and producing documents.
+
+[Here is an introduction to using Quarto](https://quarto.org/docs/get-started/hello/rstudio.html), and [here is a quick guide on common usage](https://quarto.org/docs/get-started/authoring/rstudio.html).
+
+## GitHub Copilot
+
+You should have enabled GitHub Copilot in RStudio at the beginning of lab today. If you haven't, please sit with someone who has in order to follow along to the live demo today and enable it after we start working in groups/individually.
+
+## Loading Libraries
+
+**Reminder**: Once you install a package, you must load it into your R session before you can use any of the functions in it. To do this, you use the command `library()`.
+
+Let's load the `tidyverse` packages.
+
+```{r library_tidyverse, message = FALSE, warning = FALSE}
+library(tidyverse)
+```
+
+You must load packages into **each new R session** if you want to use the functions from it, so if you're using functions from a package in an R script, it's best to include the `library()` command for each package in the R script.
+
+# Working With Data
+
+We will continue using the NHANES dataset. We'll switch over to using an RScript file for the live demo of using Copilot, but the major code pieces will also be found in this document.
+
+Note: due to how Copilot works, this may differ slightly from what you'll see in class; however, the code below will also work and could be used instead.
+
+## Reading in Data
+
+Let's load in the data. We will store the output of the `read.csv()` function in an object. You can name the object whatever you wish, but make it informative. NOTE: you will need to update this code if you wish to use this document.
+
+```{r read_data}
+nhanes <- read.csv("REPLACE_WITH_LINK_TO_DATA", 
+                   stringsAsFactors = TRUE)
+```
+
+To see the first 6 rows, we can use the `head()` function
+
+```{r head}
+head(nhanes)
+```
+
+## Summarizing Categorical Variables
+
+### Numerical summaries
+
+As discussed in class, for categorical variables we can obtain counts and proportions:
+
+```{r}
+# Calculate the counts of each hypertension status
+nhanes %>%
+  count(hypertension, sort = TRUE)
+
+# Calculate the proportions of each hypertension status
+nhanes %>%
+  count(hypertension, sort = TRUE) %>%
+  mutate(proportion = n / sum(n))
+```
+
+An alternative approach you might see:
+
+```{r}
+# Summarize the hypertension column
+summary(nhanes$hypertension)
+
+# Hypertension status proportions
+prop.table(table(nhanes$hypertension))
+```
+
+**Group exercise:** obtain appropriate numerical summaries for the `education` column. Verify that your proportions add up to 1 (or 100%)!
+
+### Graphical summaries
+
+Bar plots are a common way to visualize categorical data.
+
+```{r}
+# Barplot of hypertension status
+nhanes %>%
+  count(hypertension) %>%
+  ggplot(aes(x = factor(hypertension), y = n)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Hypertension Status",
+       x = "Hypertension",
+       y = "Count") +
+  theme_minimal()
+```
+
+You don't really need to do something this complicated here (but the above is what "Copilot" suggested for me). This is something a bit simpler:
+
+```{r}
+ggplot(nhanes, aes(x = hypertension)) +
+  geom_bar()
+```
+
+What's nice about the first code chunk is that it shows some additional arguments that you can use to customize your plot. For example, if I want to change the title of the plot, I can go in and edit it myself
+
+```{r}
+nhanes %>%
+  count(hypertension) %>%
+  ggplot(aes(x = factor(hypertension), y = n)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Barplot of Hypertension",
+       x = "Hypertension",
+       y = "Count") +
+  theme_minimal()
+```
+
+**Group exercise:** obtain appropriate graphical summaries for the `education` column.
+
+## Summarizing Numerical Variables
+
+### Numerical summaries
+
+We'll start with measures of central tendency (specifically, mean and median):
+
+```{r}
+# Calculate mean age
+nhanes %>%
+  summarize(mean_age = mean(age, na.rm = TRUE)) %>%
+  pull(mean_age)
+
+# Calculate median age
+nhanes %>%
+  summarize(median_age = median(age, na.rm = TRUE)) %>%
+  pull(median_age)
+```
+
+Next, we'll obtain measures of spread (specifically, standard deviation, variance, interquartile range, and range):
+
+```{r}
+# Calculate the standard deviation of age
+nhanes %>%
+  summarize(sd_age = sd(age, na.rm = TRUE)) %>%
+  pull(sd_age)
+
+# Calculate the variance of age
+nhanes %>%
+  summarize(var_age = var(age, na.rm = TRUE)) %>%
+  pull(var_age)
+
+# Calculate the 25th and 75th percentiles of age
+nhanes %>%
+  summarize(q25 = quantile(age, 0.25, na.rm = TRUE),
+            q75 = quantile(age, 0.75, na.rm = TRUE))
+
+# Calculate the min and max of age
+nhanes %>%
+  summarize(min_age = min(age, na.rm = TRUE),
+            max_age = max(age, na.rm = TRUE))
+```
+
+Here's a helpful code chunk that will calculate a number of useful summaries (instead of calculating them individually):
+
+```{r}
+# Calculate descriptive statistics for age
+nhanes %>%
+  summarize(
+    n = n(),
+    nmiss = sum(is.na(age)),
+    mean_age = mean(age, na.rm = TRUE),
+    median_age = median(age, na.rm = TRUE),
+    sd_age = sd(age, na.rm = TRUE),
+    var_age = var(age, na.rm = TRUE),
+    q25 = quantile(age, 0.25, na.rm = TRUE),
+    q75 = quantile(age, 0.75, na.rm = TRUE),
+    min_age = min(age, na.rm = TRUE),
+    max_age = max(age, na.rm = TRUE))
+```
+
+**Group exercise:** obtain appropriate numerical summaries for the `bp_sys_mmhg` column.
+
+### Graphical summaries
+
+In this section, we'll focus on summarizing numeric variables using graphical tools.
+
+First, we'll start with a boxplot:
+
+```{r}
+# Create boxplot of age
+nhanes %>%
+  ggplot(aes(x = "", y = age)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Age",
+       x = "",
+       y = "Age") +
+  theme_minimal()
+```
+
+Next up, a histogram:
+
+```{r}
+# Create histogram of age
+nhanes %>%
+  ggplot(aes(x = age)) +
+  geom_histogram(binwidth = 5) +
+  labs(title = "Histogram of Age",
+       x = "Age",
+       y = "Count") +
+  theme_minimal()
+```
+
+As you might suspect from the above code, it's possible to change the `binwidth`:
+
+```{r}
+nhanes %>%
+  ggplot(aes(x = age)) +
+  geom_histogram(binwidth = 15) +
+  labs(title = "Histogram of Age",
+       x = "Age",
+       y = "Count") +
+  theme_minimal()
+```
+
+Another option is to look at a density plot (a smoothed histogram):
+
+```{r}
+# Create density plot of age
+nhanes %>%
+  ggplot(aes(x = age)) +
+  geom_density() +
+  labs(title = "Density Plot of Age",
+       x = "Age",
+       y = "Density") +
+  theme_minimal()
+```
+
+**Group exercise:** obtain appropriate graphical summaries for the `bp_sys_mmhg` column.
+
+## Data Manipulation
+
+Often, we'll be interested in *relationships* between variables. For example, are older ages associated with higher systolic blood pressure? Are people who were assigned female at birth more likely to have hypertension?
+
+This week, we'll start exploring this on the data manipulation side of things and next week we'll dig into this more.
+
+### Summarizing for a particular group
+
+We can use the `filter()` function to select a subset of the data, and then use the `summarize()` function to calculate summary statistics for that subset:
+
+```{r}
+# Summarize age for those with hypertension
+nhanes %>%
+  filter(hypertension == "Yes") %>%
+  summarize(mean_age_hypertension = mean(age, na.rm = TRUE),
+            sd_age_hypertension = sd(age, na.rm = TRUE),
+            min_age_hypertension = min(age, na.rm = TRUE),
+            max_age_hypertension = max(age, na.rm = TRUE))
+```
+
+This can throw an error message if the `filter()`ing isn't set up correctly. Here, `hypertension` can only take on values `"Yes"` or `"No"` so you might need to edit the code yourself! (For example, Copilot suggested `filter(hypertension == 1)` for me and that didn't work because `1` is not a valid value for `hypertension`.)
+
+**Group exercise:** obtain summaries of age for those who are college graduates.
+
+### Summarizing by group
+
+We can use the `group_by()` function to group the data by a variable, and then use the `summarize()` function to calculate summary statistics within each group:
+
+```{r}
+# Summarize age by hypertension status
+nhanes %>%
+  group_by(hypertension) %>%
+  summarize(mean_age = mean(age, na.rm = TRUE),
+            sd_age = sd(age, na.rm = TRUE),
+            min_age = min(age, na.rm = TRUE),
+            max_age = max(age, na.rm = TRUE))
+```
+
+**Group exercise:** how would you adjust the code to additionally report the median and 25th and 75th percentiles of age by hypertension status?
+
+### Creating new variables
+
+We can use the `mutate()` function to create new variables based on existing variables. We'll demonstrate this by creating a new variable (in this case `high_cholesterol`) which takes on the values 1 if the individual has a cholesterol value of at least 240, and 0 otherwise:
+
+```{r}
+# Create high cholesterol variable for those with cholesterol of at least 240
+nhanes <- nhanes %>%
+  mutate(high_cholesterol = ifelse(chol_total_mgdl >= 240, 1, 0))
+```
+
+This can throw an error message if the suggested column name doesn't match the one you want in the dataset. In this case, Copilot suggestion `cholesterol`, but the correct column name is `chol_total_mgdl`.
+
+# Additional Group Practice
+
+## Question 1
+
+Summarize age for those with high cholesterol (cholesterol of at least 240). Report the mean, standard deviation, minimum, and maximum age.
+
+```{r}
+# Code goes here
+```
+
+## Question 2
+
+Create a boxplot of cholesterol levels for those with an income of at least \$75,000.
+
+```{r}
+# Code goes here
+```
+
+# Lab Assignment
+
+These questions use the `nhanes` data. Please turn in a completed html, pdf, or word document. For this assignment, we are still focusing on learning data manipulation in R and so you can just turn in the code, output from the code/filled in table/plot, and briefly answer the questions. (As a heads up, we will begin to shift from learning the basics of R and future labs will focus on using R as a tool to answer questions-- thus expect the format to change to more of a written assignment).
+
+## Question 1
+
+Create a table that summarizes systolic blood pressure:
+
+1.  For all participants
+2.  For those with high cholesterol (cholesterol level of at least 240 mg/dl)
+3.  For those without high cholesterol (cholesterol level less than 240 mg/dl).
+
+Specifically, report the number of individuals in each group, the mean and standard deviation of systolic blood pressure, the median and interquartile range of systolic blood pressure, and the range of systolic blood pressure.
+
+Here's a template for the table:
+
+|              | All Participants | High Cholesterol - Yes | High Cholesterol - No |
+|-----------------|-----------------|-------------------|--------------------|
+| N            |                  |                        |                       |
+| Mean (sd)    |                  |                        |                       |
+| Median (IQR) |                  |                        |                       |
+| Range        |                  |                        |                       |
+
+```{r q1}
+# code goes here
+```
+
+## Question 2
+
+Present a boxplot of systolic blood pressure for all participants in the dataset (be sure to include a title and label relevant axes). Comment on the shape of the distribution.
+
+```{r q2}
+# code goes here
+```
+
+## Question 3
+
+Present a histogram of systolic blood pressure for only participants who do not have high cholesterol (be sure to include a title and label relevant axes). Comment on the shape of the distribution.
+
+```{r q3}
+# code goes here
+```
+
+## Question 4
+
+Define a new variable called `highbp`, which is an indicator for whether someone has high blood pressure (we'll define this by having systolic blood pressure of 130 or higher OR diastolic blood pressure of 80 or higher). Among those who have a total cholesterol of at least 200 mg/dl, what proportion have high blood pressure? Among those who have a total cholesterol of less than 200 mg/dl, what proportion have high blood pressure?
+
+```{r q4}
+# code goes here
+```

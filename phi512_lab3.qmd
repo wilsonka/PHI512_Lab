@@ -1,0 +1,167 @@
+---
+title: "PHI512 Lab 3"
+format: 
+  html:
+    toc: true
+editor: visual
+---
+
+# Prep
+
+## Loading Libraries
+
+**Reminder**: Once you install a package, you must load it into your R session before you can use any of the functions in it. To do this, you use the command `library()`.
+
+Let's load the `tidyverse` packages.
+
+```{r library_tidyverse, message = FALSE, warning = FALSE}
+library(tidyverse)
+```
+
+You must load packages into **each new R session** if you want to use the functions from it, so if you're using functions from a package in an R script, it's best to include the `library()` command for each package in the R script.
+
+## Reading in Data
+
+We will continue using the NHANES dataset. We'll switch over to using an RScript file for the live demo of using Copilot, but the major code pieces will also be found in this document.
+
+Note: due to how Copilot works, this may differ slightly from what you'll see in class; however, the code below will also work and could be used instead.
+
+Let's load in the data. We will store the output of the `read_csv()` function in an object. You can name the object whatever you wish, but make it informative.
+
+```{r read_data}
+nhanes <- read_csv("REPLACE_WITH_LINK")
+```
+
+To see the first 6 rows, we can use the `head()` function
+
+```{r head}
+head(nhanes)
+```
+
+# Graphical displays of associations
+
+## Side-by-side boxplots
+
+Side-by-side boxplots are a great way to visually summarize numerical data by the levels of a categorical variable.
+
+For example, let's say we want to look at the distribution of age by hypertension status:
+
+```{r}
+# Create boxplots of age by hypertension status
+nhanes %>%
+  ggplot(aes(x = hypertension, y = age)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Age by Hypertension Status",
+       x = "Hypertension Status",
+       y = "Age") +
+  theme_minimal()
+```
+
+## Scatterplots
+
+Scatterplots are helpful to visually summarize the relationship between two numerical variables.
+
+For example, let's say we want to look at the relationship between systolic blood pressure and diastolic blood pressure:
+
+```{r}
+nhanes %>%
+  ggplot(aes(x = bp_dia_mmhg, y = bp_sys_mmhg)) +
+  geom_point() +
+  labs(title = "Scatterplot of Systolic Blood Pressure by Diastolic Blood Pressure",
+       x = "Diastolic Blood Pressure",
+       y = "Systolic Blood Pressure") +
+  theme_minimal()
+```
+
+As per usual, you may need to adjust the column names to match the ones in the dataset. In this case, Copilot suggested `diastolic` and `systolic` for me, but the correct column names are `bp_dia_mmhg` and `bp_sys_mmhg`.
+
+At this point, it's a good idea to check that everything matches with what you would expect. Do we expect systolic blood pressure to be higher or lower than diastolic blood pressure? Check that the axis labels make sense.
+
+## Alternatives
+
+There are of course alternative types of plots that you could create and use to compare distributions and examine relationships. Here's one more example:
+
+```{r}
+# Density plot of age by hypertension status
+nhanes %>%
+  ggplot(aes(x = age, fill = hypertension)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density Plot of Age by Hypertension Status",
+       x = "Age",
+       y = "Density") +
+  theme_minimal()
+```
+
+# Numerical summaries of associations
+
+We started looking at this last week, where we were interested in summarizing a numerical variable (e.g., age) by a categorical variable (e.g., hypertension status). As a reminder:
+
+```{r}
+nhanes %>%
+  group_by(hypertension) %>%
+  summarize(
+    n = n(),
+    nmiss = sum(is.na(age)),
+    mean_age = mean(age, na.rm = TRUE),
+    median_age = median(age, na.rm = TRUE),
+    sd_age = sd(age, na.rm = TRUE),
+    var_age = var(age, na.rm = TRUE),
+    q25 = quantile(age, 0.25, na.rm = TRUE),
+    q75 = quantile(age, 0.75, na.rm = TRUE),
+    min_age = min(age, na.rm = TRUE),
+    max_age = max(age, na.rm = TRUE))
+```
+
+## Correlation
+
+For two numerical variables, we can calculate the correlation:
+
+```{r}
+# Correlation of systolic and diastolic blood pressure
+nhanes %>%
+  summarize(correlation = cor(bp_sys_mmhg, bp_dia_mmhg))
+```
+
+## Contingency tables
+
+When we have two categorical variables, it can be helpful to display the data as a contingency table.
+
+```{r}
+# Contingency table of education level and income level
+nhanes %>%
+  count(education, income_hh) %>%
+  pivot_wider(names_from = income_hh, values_from = n, values_fill = 0)
+```
+
+An alternative approach is to use the table function:
+
+```{r}
+nhanes %>% 
+  select(education, income_hh) %>%
+  table(useNA = "always")
+```
+
+These provide counts, but it can be helpful to see the proportions as well. Think carefully about what proportions you want. Are you interested in including missing values? Do you want the proportion within each row (e.g., proportion in each income bucket for each education level) or within each column (e.g., proportion of each education level within each income bucket)? Or overall (e.g., proportion of each cell in the table)?
+
+Here's an example of how we could get row proportions:
+
+```{r}
+# Proportion of income levels by education level
+nhanes %>%
+  count(education, income_hh) %>%
+  group_by(education) %>%
+  mutate(prop = n / sum(n))
+```
+
+It's always a good idea to verify the proportions (within each education level) add up to 1!
+
+Using the alternative approach with `table()` and `prop.table()`:
+
+```{r}
+nhanes %>% 
+  select(education, income_hh) %>%
+  table(useNA = "always") %>%
+  prop.table(margin = 1) # 1 = rows; 2 = columns; NULL = overall
+```
+
+**Group exercise:** Calculate the proportion of each education level by income levels IGNORING (i.e., removing) missing values.

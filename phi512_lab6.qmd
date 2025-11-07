@@ -1,0 +1,101 @@
+---
+title: "PHI512 Lab 6"
+format: 
+  html:
+    toc: true
+editor: visual
+---
+
+# One sample test of propotions using simulation
+
+Let's consider the "Helper and Hinderer" example from class. There, we had observed 14 out of 16 infants select the "Helper" toy. We were interested in testing whether infants preferred the helper toy.
+
+We had the following null and alternative hypotheses:
+
+$H_0: p = 0.5$
+
+$H_A: p > 0.5$
+
+In class we thought about a model where we could consider our null hypothesis (no preference in toy) as the same as flipping a fair (because under the null hypothesis we assume $p = 0.5$) coin 16 times and observing the number of heads. In this analogy, the number of heads is the number of infants that select the helper toy. We could repeat this experiment many many times to get a sense of the distribution of the number of heads (or number of infants selecting the helper toy) assuming there is no preference:
+
+```{r rbinom}
+nexperiments <- 1e6 # 1 million experiments
+ninfants <- 16 # number of total trials within an experiment
+set.seed(2) # set a seed so that our results are replicable
+samples <- rbinom(nexperiments, ninfants, prob = 0.5)
+hist(samples, xlab = "Test Statistic\n(number of infants selecting helper toy)",
+     main = "Sampling Distribution of Testing Statistic\nunder H0",
+     probability = TRUE)
+```
+
+Informally, this is showing us how many infants we would expect to see picking the helper toy in a random sample of 16 infants *if infants had no preference for the helper toy*. I.e. it's plausible that we would see 6 infants selecting the helper toy. Or 9 infants. But not 15.
+
+We observed 14 infants selecting the helper toy. So this does not seem consistent with null hypothesis just based off an initial look at this sampling distribution. In other words, it is unlikely that we would observe 14 infants selecting the helper toy just by random chance assuming no preference for the helper toy.
+
+We could calculate a critical value and see if our test statistic falls into the rejection region created by this test statistic. Here we are doing a one-sided test where we are interested in whether $p > 0.5$ so we would want the 0.95 quantile. What would we do if our alternative hypothesis was $p < 0.5$? Or $p \neq 0.5$?
+
+```{r critical values}
+quantile(samples, probs = 0.95)
+```
+
+We find that the critical value is 11, which means if we observe more than 11 (i.e. 12-16) infants selecting the "helper" toy we would reject the null hypothesis.
+
+We could also calculate a p-value by determining the fraction of experiments where 14 or more infants selected the helper toy:
+
+```{r empirical pvalue}
+mean(samples >= 14)
+```
+
+This gives us a p-value of 0.002. So this would suggest that infants do favor the helper toy.
+
+This p-value was calculated using a simulation/empirical probabilities. We simulated from the binomial distribution (e.g. we thought about 1 million people each flipping 16 coins and recording the number of heads), but we could use the actual/theoretical probabilities from the binomial distribution.
+
+# One sample test of proportions (exact)
+
+Here we will use the theoretical probabilities from the binomial distribution. As a reminder, there is a handy R function called `binom.test()` that we can use! It will calculate the p-value for us.
+
+## One-sided test
+
+We had the following null and alternative hypotheses:
+
+$H_0: p = 0.5$
+
+$H_A: p > 0.5$
+
+and suppose we set our significance level ($\alpha$) to 0.05.
+
+```{r binom_test}
+binom.test(x = 14, n = 16, alternative = "greater")
+```
+
+We can see that the p-value is 0.002. This is less than 0.05 so we would reject the null hypothesis.
+
+## Variant 1: two-sided test
+
+What if we wanted the p-value from a two-sided test:
+
+$H_0: p = 0.5$
+
+$H_A: p \neq 0.5$
+
+```{r binom_test var1}
+binom.test(x = 14, n = 16)
+```
+
+We can see that the p-value is 0.004. This is still pretty small so we would still favor the alternative (if we chose $\alpha = 0.05$ we would still reject)
+
+## Variant 2: different null p
+
+What if we wanted to test against a different null hypothesis?
+
+As an example, suppose our null and alternative hypotheses are:
+
+$H_0: p = 0.6$
+
+$H_A: p > 0.6$
+
+```{r binom_test var2}
+binom.test(x = 14, n = 16, p = 0.6, alternative = "greater")
+```
+
+We can see that the p-value is 0.02.

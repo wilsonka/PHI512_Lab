@@ -1,0 +1,171 @@
+---
+title: "PHI512 Lab 7"
+format: 
+  html:
+    toc: true
+editor: visual
+---
+
+# Preliminaries
+
+First, we'll load `tidyverse`:
+
+```{r}
+library(tidyverse)
+```
+
+Next, we'll load our nhanes dataset:
+
+```{r}
+nhanes <- read_csv("REPLACE_WITH_LINK_TO_DATA")
+```
+
+We can get some summary statistics:
+
+```{r}
+nhanes %>% summary()
+```
+
+# One sample procedures for continuous outcome
+
+Suppose we are interested in making inference on the mean cholesterol among people with hypertension (your homework asks you to do this for people without hypertension). Note that cholesterol is considered a **continuous** outcome.
+
+Let's illustrate how to use R to:
+
+1.  Calculate a point estimate (this is the sample mean)
+2.  Compute a confidence interval
+3.  Perform a one sample t-test
+
+This can all be accomplished using `t.test()`:
+
+```{r}
+# First, obtain all of the cholesterol measurements for the people in our sample with hypertension
+chol_hyp <- nhanes %>% 
+  filter(hypertension == "Yes") %>%
+		pull(chol_total_mgdl)
+t.test(chol_hyp)
+```
+
+Interpreting the output:
+
+-   point estimate: 193 mg/dL
+-   95% CI: 186, 201 mg/dL
+
+We can also change the level of the confidence interval. Say we would like a 99% confidence interval
+
+```{r}
+t.test(chol_hyp, conf.level = 0.99)
+```
+
+Now, suppose we would like to test the null hypothesis that the mean cholesterol among people with hypertension is equal to 191 mg/dL:
+
+$H_0: \mu = 191$ $H_A: \mu \neq 191$
+
+where $\mu$ is the population mean cholesterol among people with hypertension.
+
+To implement in R:
+
+```{r}
+t.test(chol_hyp, mu = 191)
+```
+
+Our p-value is 0.55.
+
+# One sample procedures for binary outcome
+
+Suppose we are interested in making inference on the proportion of people with private health insurance among people with hypertension. Note that having private health insurance is a **binary** outcome (can either have private insurance or not). We'll review how to do this using the exact approach.
+
+```{r}
+private_ins_hyp <- nhanes %>% 
+  # restrict to those with hypertension
+  filter(hypertension == "Yes") %>% 
+  # create new var which is T/F of health insurance
+  mutate(isprivate = health_insurance == "Private") %>% 
+  # pull the new column
+  pull(isprivate)
+# number with private health insurance
+x = sum(private_ins_hyp)
+# sample size
+n = sum(!is.na(private_ins_hyp))
+binom.test(x = x, n = n)
+```
+
+Interpreting the output:
+
+-   point estimate: 0.679
+-   95% CI: 0.594, 0.756
+
+Now, we will show how to do this using the normal approximation. The approximation should not be used if $np$ or $n(1-p)$ is small.
+
+Let's illustrate how to use R to:
+
+1.  Calculate a point estimate (this is the sample proportion)
+2.  Compute a confidence interval
+3.  Perform a one sample z-test
+
+```{r}
+prop.test(x = x, n = n)
+```
+
+Interpreting the output:
+
+-   point estimate: 0.679
+-   95% CI: 0.593, 0.755
+
+Again, we can change the level:
+
+```{r}
+prop.test(x = x, n = n, conf.level = 0.99)
+```
+
+Suppose we are interested in testing the null hypothesis that the proportion of individuals with private health insurance among those with hypertension is equal to 0.6:
+
+$H_0: p = 0.6$ $H_A: p \neq 0.6$
+
+where $p$ is the proportion of individuals with private health insurance among those with hypertension.
+
+The default of `prop.test()` when there is only one sample is to set the value for $p$ under the null hypothesis to 0.5:
+
+```{r}
+prop.test(x = x, n = n, p = 0.6)
+```
+
+Recall the exact test would be run like so:
+
+```{r}
+binom.test(x = x, n = n, p = 0.6)
+```
+
+# Two sample procedures for continuous outcome
+
+Suppose we are interested in making inference on the difference in mean cholesterol comparing individuals with and without hypertension. Note that cholesterol is a **continuous** outcome.
+
+Let's illustrate how to use R to:
+
+1.  Calculate a point estimate (this is the difference in sample means)
+2.  Compute a confidence interval
+3.  Perform a two sample t-test
+
+```{r}
+chol_nohyp <- nhanes %>% 
+  filter(hypertension == "No") %>%
+		pull(chol_total_mgdl)
+t.test(chol_hyp, chol_nohyp)
+```
+
+-   Point estimate for the difference in mean systolic blood pressure will need to be calculated as the difference in the two sample estimates: `193.3258-185.8943`: 7.43 mg/dL (higher among those with hypertension)
+-   95% confidence interval for the difference: -1.16, 16 mg/dL
+
+As before we could change the level using the `conf.level` argument. By default, the output presents a p-value based off the following hypothesis test:
+
+$H_0: \mu_1 = \mu_2$ $H_A: \mu_1 \neq \mu_2$
+
+where $\mu_1$ is the mean cholesterol among people with hypertension and $\mu_2$ is the mean cholesterol among people without hypertension. The p-value is $0.09$.
+
+# Note about matched data
+
+If we had matched data, we could use the `matched` argument or create a new column that is the differences and then simply run a one-sample t-test (these are exactly the same!)
+
+```{r eval = F}
+t.test(var1, var2, paired = TRUE)
+```

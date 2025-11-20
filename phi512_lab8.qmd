@@ -1,0 +1,129 @@
+---
+title: "PHI512 Lab 8"
+format: 
+  html:
+    toc: true
+editor: visual
+---
+
+# Preliminaries
+
+First, we'll load `tidyverse`:
+
+```{r}
+library(tidyverse)
+```
+
+Next, we'll install (if you haven't already) and load the `epiR` package:
+
+```{r}
+# coy the "install.packages()" code below without the comment (#) and run it in your R console
+# install.packages("epiR")
+library(epiR)
+```
+
+Let's read in the NOAH data from an earlier lab:
+
+```{r}
+noah <- read_csv("REPLACE_WITH_LINK")
+```
+
+We then subset our data to include only HER2+ patients, and on each treatment arm calculate the total number of patients, and the number that experienced PCR:
+
+```{r}
+# subset to HER2+ patients and calculate the number of patients and number with PCR
+noah %>%
+  filter(her2 == "HER2+") %>%
+  dplyr::group_by(treatment) %>%
+  summarize(n.tot = n(), n.resp = sum(pcr))
+```
+
+# Inferential procedures for 2 x 2 tables + chi-square test
+
+Here, we'll use `epi.2by2()` to calculate the risk difference, relative risk, and odds ratio and corresponding confidence intervals for the association between treatment arm and PCR (for those who are HER2+). To do this, we first need to create a 2x2 matrix where the rows are the exposure and the columns are the outcome.
+
+```{r}
+# Create matrix with exposure (treatment) as rows and outcome (PCR) as columns for those who are HER2+
+my.2x2table <- noah %>%
+  filter(her2 == "HER2+") %>%
+  dplyr::select(treatment, pcr) %>%
+  table(deparse.level=2)
+my.2x2table
+# Swap rows and swap columns
+my.2x2table <- my.2x2table[c(2,1), c(2,1)]
+my.2x2table
+```
+
+Next, we can use `epi.2by2()` to do our calculations and run a chi-square test:
+
+```{r}
+epi.2by2(my.2x2table, method = "cohort.count", conf.level = 0.95)
+```
+
+-   $\hat{RD}$ = 0.21 (95% CI: 0.04, 0.39)
+-   $\hat{RR}$ = 1.83 (95% CI: 1.07, 3.15)
+-   $\hat{OR}$ = 2.56 (95% CI: 1.14, 5.74)
+
+The p-value for the chi-square test (e.g., $RD = 0$ is 0.02).
+
+We could also use `chisq.test()` to get the p-value:
+
+```{r}
+chisq.test(my.2x2table) # uses the correction
+chisq.test(my.2x2table, correct = FALSE) # does not use the correction
+```
+
+# Exact test of independence
+
+We can also use the exact test to evaluate the association between treatment arm and PCR (for those who are HER2+):
+
+```{r}
+fisher.test(my.2x2table)
+```
+
+Note, that this is the same p-value that was provided as output from `epi.2by2()` (`Fisher exact test that OR = 1: Pr>ch2 = 0.030`)
+
+# McNemar's test
+
+When we have paired binary data, we can use McNemar's test. Here, we'll use `mcnemar.test()`.
+
+First, let's load the data:
+
+```{r}
+tonsils <- read_csv("REPLACE_WITH_LINK")
+```
+
+[This data comes from a study looking at the relationship between tonsillectomy and Hodgkin's lymphoma](https://en.wikipedia.org/wiki/McNemar%27s_test): 85 Hodgkin's lymphoma patients were recruited along with a sibling of the same sex, approximately the same age, and did not have Hodgkin's lymphoma:
+
+```{r}
+# create table of exposure (tonsillectomy) and outcome (Hodgkin's lymphoma)
+tonsils %>%
+  dplyr::select(tonsillectomy, patient) %>%
+  table(deparse.level=2)
+```
+
+But we would not want to run the chi-square test here because the samples are not independent! Instead, we need to create a table that takes into account the paired nature of the data:
+
+```{r}
+# Create a new data frame where each row corresponds to a pair
+# and the columns are the tonsillectomy status of the patient and sibling
+
+tonsils_pairs <- tonsils %>% 
+  dplyr::group_by(pair) %>% 
+  summarise(tonsillectomy_patient = tonsillectomy[patient == 1],
+            tonsillectomy_sibling = tonsillectomy[patient == 0])
+tonsils_pairs
+
+# Create contingency table
+tonsils_table <- tonsils_pairs %>%
+  dplyr::select(tonsillectomy_patient, tonsillectomy_sibling) %>%
+  table(deparse.level=2)
+
+tonsils_table
+```
+
+Now, we can apply McNemar's test:
+
+```{r}
+mcnemar.test(tonsils_table)
+```

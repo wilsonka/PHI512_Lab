@@ -1,0 +1,124 @@
+---
+title: "PHI512 Lab 9"
+format: 
+  html:
+    toc: true
+editor: visual
+---
+
+# Prep
+
+## Loading libraries
+
+Let's load the `tidyverse`:
+
+```{r library_tidyverse_rigr, message = FALSE, warning = FALSE}
+library(tidyverse)
+```
+
+## Loading data
+
+```{r read_data}
+nhanes <- read_csv("REPLACE_WITH_LINK")
+```
+
+We will be examining the relationship between age and systolic blood pressure in this dataset.
+
+# Descriptive Statistics
+
+## Scatterplot
+
+Now let's create a scatterplot of age (x-axis) vs systolic blood pressure (y-axis) for these participants. We can use the `plot()` function in R.
+
+```{r scatter}
+plot(bp_sys_mmhg ~ age, data = nhanes, 
+     xlab = "Age (yrs)", ylab = "Systolic blood pressure (mm Hg)",
+     pch = 16, cex = 0.6)
+```
+
+## Correlation
+
+We can use the `cor()` function in R to calculate the correlation:
+
+```{r cor}
+cor(nhanes$age, nhanes$bp_sys_mmhg) # default is "pearson" -- linear correlation coefficient
+cor(nhanes$age, nhanes$bp_sys_mmhg, method = "kendall")
+cor(nhanes$age, nhanes$bp_sys_mmhg, method = "spearman")
+```
+
+# Linear Regression
+
+## Fitting the Model
+
+Suppose we would like to fit a linear model to the data: $$\text{mean SBP} = \beta_0 + \beta_1 \times \text{age}$$
+
+We can use the `lm()` function:
+
+```{r lm}
+model <- lm(bp_sys_mmhg ~ age, data = nhanes)
+model
+summary(model)
+confint(model)
+```
+
+Our fitted model:
+
+```{=tex}
+\begin{align*}
+\widehat{\text{mean}}\text{ SBP} & = \hat{\beta}_0 + \hat{\beta}_1 \times \text{age}\\
+& = 103.7 + 0.40 \times \text{age}
+\end{align*}
+```
+-   What is the interpretation for the estimate of the intercept?
+
+The estimated mean systolic blood pressure among people who are 0 years old is 103.7 mm Hg. Note that this is an extrapolation well beyond the range of our data (youngest age is 18).
+
+-   What is the interpretation for the estimate of the slope?
+
+Comparing groups differing in age by 1 year, mean systolic blood pressure is estimated to be 0.40 mm Hg higher (95% CI: 0.32 mm Hg, 0.48 mm Hg) for the older age group. This is useful as it is characterizing the association between age and systolic blood pressure.
+
+## Hypothesis Testing
+
+Suppose we are interested in testing the null hypothesis of no association between age and systolic blood pressure:
+
+-   $H_0: \beta_1  = 0$
+-   $H_A: \beta_1 \ne 0$
+
+A p-value $< 0.0001$ suggests that there is evidence of an association between age and systolic blood pressure.
+
+## Scatterplot part 2
+
+```{r scatter pt2}
+plot(bp_sys_mmhg ~ age, data = nhanes, 
+     xlab = "Age (years)", ylab = "Systolic blood pressure (mm Hg)",
+     pch = 16, cex = 0.6)
+abline(model, col = "blue", lwd=2)
+```
+
+# Questions
+
+## Question 1: Centering the Predictor
+
+What happens if we were to center age around its mean? $$\text{mean SBP} = \beta_0^c + \beta_1^c \times \text{age}^c$$ where $\text{age}^c = \text{age} - \overline{\text{age}}$
+
+```{r}
+nhanes <- nhanes %>% mutate(agec = age - mean(age))
+nhanes %>% pull(agec) %>% summary()
+```
+
+How do our interpretations change of the coefficients? Speculate how this might change our results. Now fit the model. How do the results change?
+
+## Question 1 Solution
+
+## Question 2: Scaling the Predictor
+
+What if instead of using age measured in years, we used age measured in months: $$\text{mean SBP} = \beta_0^\star + \beta_1^\star \times \text{age}^\star$$ where $\text{age}^\star = 12 \times \text{age}$ ($\text{age}^\star$ is age measured in months and $\text{age}$ is age measured in years). Note: this is a bit contrived, especially since age in years is reported in whole numbers, but this example will illustrate the effect of scaling the predictor and the various relationships between the intercepts and slopes of the different models.
+
+```{r}
+nhanes <- nhanes %>% mutate(agestar = 12 * age)
+nhanes %>% pull(agestar) %>% summary()
+```
+
+How do our interpretations change of the coefficients? Speculate how this might change our results. Now fit the model. How do the results change?
+
+## Question 2 Solution
